@@ -1,30 +1,38 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <stdlib.h>
+#include<stdlib.h>
 
 #define MValue 1000000
 
-double mat[100][100], b[100], temp[100][100];
+double mat[100][100], b[100], c[100], temp[100][100];
 int basic[100];
-int ieq_type[100];
 int m, n;
 int unbounded = 0;
 int infinite = 0;
 int table_no = 0;
-int less_than = 0, equal_to = 0, greater_than = 0;
+int sign[100];
+int type, artificial, slack, surplus;
 
 int rowMin(){
     int i;
     int index = -1;
     float currMin = 0;
     for(i = 0 ; i < n ; i++){
+    	  if(i >= m && i < m + surplus )	continue;
           if(mat[m][i] > 0)	continue;
+          /*if(mat[m][i] == 0){
+               infinite = 1;
+               return -1;
+          }
+          */
           if(mat[m][i] < currMin){
                currMin = mat[m][i];
                index = i;
          }
     }
+    //isBasic[index] = 1;
+    //x[index] = matrix[m][index];
     return index;
 }
 
@@ -41,6 +49,8 @@ int getPivotRow(int pivotCol){
 	return index;
 }
 
+
+
 void Simplex_Optimisation(){
     int i, j;
 	printf("------------------------------------------------------\n");
@@ -52,7 +62,13 @@ void Simplex_Optimisation(){
 	printf("\n");
 	}
 	printf("------------------------------------------------------\n");
-
+/*
+	for(i = 0; i < n; ++i){
+		for(j = 0; j < m; ++j){
+				mat[m][i] = mat[m][m+surplus+j] * mat[i][j];
+		}
+	}
+*/
 	int pivotRow, pivotCol, swap_pos;
 	while((pivotCol = rowMin()) != -1){
 		if((pivotRow = getPivotRow(pivotCol)) == -1){
@@ -62,7 +78,7 @@ void Simplex_Optimisation(){
 		swap_pos = basic[pivotCol];
 		basic[pivotCol] = basic[n-m+pivotRow];
 		basic[n-m+pivotRow] = swap_pos;
-		for(i = 0 ; i <= m ; i++){
+		for(i = 0 ; i <= m; i++){
 			for(j = 0 ; j <= n; j++){
 				if(i == pivotRow && j == pivotCol)
 					temp[i][j] = 1;
@@ -90,9 +106,8 @@ void Simplex_Optimisation(){
 
 int main(){
 	int i, j;
-	int type;
 	double factor;
-	int inequality;
+	char inequality[10];
 	printf("Enter the type of the problem:\n1.	Maximization\n2.	Minimization\n\n");
 	scanf("%d", &type);
 	switch(type){
@@ -111,65 +126,54 @@ int main(){
 
 	printf("Enter the number of variables (n):\n");
 	scanf("%d", &n);
-	//getchar();
-	for(i = 0; i < m; ++i){
-		printf("Enter the sign of inequality of %d th inequation:\n", i+1);
-		printf("1 -> less than or equal to (<=)\n");
-		printf("2 -> equal to (=)\n");
-		printf("3 -> greater than or equal to (>=)\n");
-		scanf("%d", &inequality);
-		printf("%d\n", inequality);
-		if(inequality == 1){
-			ieq_type[i] = -1;
-			++less_than;
-		}
-		else if(inequality == 2){
-			ieq_type[i] = 0;
-			++equal_to;
-		}
-		else if(inequality == 3){
-			ieq_type[i] = 1;
-			++greater_than;
-
-		}
-	}
-
+	printf("Enter the greater-than type inequations first and the less-than type inequations later.\n\n");
 	for(i = 0 ; i < m ; i++){
-		printf("Enter coefficients and constant term of inequation no %d:\n" , i+1);
+		printf("Enter coefficients, inequation sign and constant term of inequation no %d:\n" , i+1);
 		for(j = 0 ; j < n ; j++){
 			scanf("%lf",&mat[i][j]);
 		}
-		scanf("%lf", &mat[i][m+n]);
+		scanf("%s", inequality);
+		if(inequality[0] == '<')	sign[i] = -1;
+		else if(inequality[0] == '>')	sign[i] = 1;
+		scanf("%lf", &b[i]);
 	}
-	for(i = 0; i < m; ++i)	mat[i][n+i] = 1;
-	int negcoeff = 0;
+	
+	artificial = 0;
+	slack = 0;
+	surplus = 0;
+
 	for(i = 0; i < m; ++i){
-		if(ieq_type[i] == 1){
-			mat[i][n + negcoeff++] = -1;
+		if(sign[i] == -1){
+			mat[i][n+i] = 1;
+			++slack;
+		}
+		else if(sign[i] == 1){
+			mat[i][n+i] = -1;
+			mat[i][n + m + artificial] = 1;
+			++surplus;
+			++artificial;
 		}
 	}
 
 	for(i = 0; i < m; ++i){
-		if(ieq_type[i] == )
+		mat[i][n+m+artificial] = b[i];
 	}
+
 
 	printf("Enter coefficients of the %d variables in the objective function Z followed by the constant:\n", n);
 	printf("If there is no constant, enter 0 as the constant value.\n");
 	for(j = 0; j < n ; j++){
-		scanf("%lf", &mat[m][j]);
+		scanf("%lf", &c[i]);
+		printf("%lf\t", c[i]);
 		if(j != n)
-			mat[m][j] = -factor * mat[m][j];
+			mat[m][j] = -factor * c[i];
 	}
+	for(i = 0; i < m; ++i) mat[m][n+i] = 0;
+	for(i = 0; i < artificial; ++i) mat[m][n+m+i] = MValue;
 
-	for(i = 0; i < surplus; ++i)	mat[m][n+i] = 0;
-	for(i = 0; i < m; ++i){
-		mat[m][n+surplus+i] = 0;
-		if(ieq_type[i] == 0 || ieq_type[i] == 1)	mat[m][n+surplus+i] = MValue;
-	}
-
-	n += m + surplus;
-	scanf("%lf", &mat[m][n]);
-
+	scanf("%lf", &mat[m][n+m+artificial]);
+	
+	n += slack + surplus + artificial;
 	for(i = 0; i < n; ++i){
 		basic[i] = i+1;
 	}
@@ -188,11 +192,10 @@ int main(){
 			//printf("x_%d* = %lf\t", basic[n-m + i], mat[i][n]);
 			x[basic[n-m + i] - 1] = mat[i][n];
 		}
-		for(i = 0; i < n; ++i)	printf("x_%d = %lf\t", i+1, x[i]);
-		printf("\nThe optimal value of Z is %f \n", mat[m][n]);
-	}
+		for(i = 0; i < n; ++i)	printf("x_%d* = %lf\t", i+1, x[i]);
 
+		printf("\nThe Maximum value of Z is %lf \n", mat[m][n]);
+	}	
 	printf("-------------------------------------------------------\n");
 	return 0;
 }
-

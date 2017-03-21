@@ -12,7 +12,7 @@ int m, n;
 int unbounded = 0;
 int infinite = 0;
 int table_no = 0;
-int less_than = 0, equal_to = 0, greater_than = 0;
+int slack = 0, surplus = 0, artificial = 0;
 
 int rowMin(){
     int i;
@@ -121,16 +121,16 @@ int main(){
 		printf("%d\n", inequality);
 		if(inequality == 1){
 			ieq_type[i] = -1;
-			++less_than;
+			++slack;
 		}
 		else if(inequality == 2){
 			ieq_type[i] = 0;
-			++equal_to;
+			++artificial;
 		}
 		else if(inequality == 3){
 			ieq_type[i] = 1;
-			++greater_than;
-
+			++surplus;
+			++artificial;
 		}
 	}
 
@@ -139,18 +139,18 @@ int main(){
 		for(j = 0 ; j < n ; j++){
 			scanf("%lf",&mat[i][j]);
 		}
-		scanf("%lf", &mat[i][m+n]);
+		//if (inequality[0] == '<'){
+			//scanf("%lf", &mat[i][n+j]);
+		//}
+		//printf("Surplus = %d\n", surplus);
+		scanf("%lf", &mat[i][m+n+surplus]);
 	}
-	for(i = 0; i < m; ++i)	mat[i][n+i] = 1;
+	for(i = 0; i < m; ++i)	mat[i][n+surplus+i] = 1;
 	int negcoeff = 0;
 	for(i = 0; i < m; ++i){
 		if(ieq_type[i] == 1){
 			mat[i][n + negcoeff++] = -1;
 		}
-	}
-
-	for(i = 0; i < m; ++i){
-		if(ieq_type[i] == )
 	}
 
 	printf("Enter coefficients of the %d variables in the objective function Z followed by the constant:\n", n);
